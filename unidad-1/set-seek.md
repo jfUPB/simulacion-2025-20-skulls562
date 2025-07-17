@@ -55,3 +55,21 @@ y tuve una imagen asi
 
 <img width="324" height="150" alt="image" src="https://github.com/user-attachments/assets/e079eacb-fcb7-43b4-bded-4b729062d4d6" />
 
+### Actividad 4
+
+Estaba revisando el ejercio y lo principal es que este es de distrubuvion uniforme donde se puede predisponer la zona en concreto donde estamos dando mas la probabilidad de caer en cierto punto determinado a diferencia de la no univforme donde tiene a dispocision cualquier sentido y direccion
+
+#### Uniforme
+<img width="101" height="96" alt="image" src="https://github.com/user-attachments/assets/cfd49f57-d37f-4320-8010-a6d3d54555fe" />
+
+#### No uniforme 
+<img width="140" height="130" alt="image" src="https://github.com/user-attachments/assets/65ba0655-7ee7-4914-85c2-d14848e2cede" />
+
+Alterando el codigo pude llegar a esta condicion de caos donde ya no delimito el movimiento de "y"
+
+viendose asi 
+
+<img width="104" height="104" alt="image" src="https://github.com/user-attachments/assets/5c26fee1-33c5-4d37-b60f-83491a63c8ca" />
+
+
+
