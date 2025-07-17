@@ -9,3 +9,5 @@ la aleatoridad trae cosas muy bellas en el arte, que hace que esta se sienta viv
 ### Actividad 2
 
 1. el producto de sofi, tiene un gran aspecto aleatorio dado a que se basa en una cancion para tener su despliegue visual, no se rige por ningun movimiento en concreto, es natural y organico, tal como la pbra de aurora que ella muestra, esto genera patrones unicos que jamas en la vida seran repetidos, lo que le da mas emocion y sentido a la obtra
+
+2.En mi vida profecional, me encantaria aplicar esto en mis produciones visuales, pudiendo unir mi musica y gustos con la parte visual viva, de poder trabajar en mis visuales mientras toco musica tal y como la banda que nos mostro el profe.
