@@ -98,5 +98,64 @@ normalize() mantiene dirección y ajusta magnitud a 1.
 limit() impone un valor máximo a la magnitud, útil para limitar velocidad o fuerza.
 
 
+### Actividad 5
 
+Codigo (luego explico
+
+```js
+let t = 0;
+let direccion = 1;
+
+function setup() {
+  createCanvas(680, 680);
+}
+
+function draw() {
+  background(200);
+
+  let v0 = createVector(50, 50);
+  let v1 = createVector(500, 0);
+  let v2 = createVector(0, 500);
+  let v4 = createVector(-500, 500);
+  let v5 = createVector(550, 50);
+
+  let v3 = p5.Vector.lerp(v1, v2, t);
+  let c1 = color('red');
+  let c2 = color('blue');
+  let c3 = lerpColor(c1, c2, t);
+
+  drawArrow(v0, v1, 'red');
+  drawArrow(v0, v2, 'blue');
+  drawArrow(v0, v3, c3);
+  drawArrow(v5, v4, 'purple');
+
+  
+  t += 0.01 * direccion;
+
+  
+  if (t >= 1) {
+    t = 1;
+    direccion = -1;
+  } else if (t <= 0) {
+    t = 0;
+    direccion = 1;
+  }
+}
+
+function drawArrow(base, vec, myColor) {
+  push();
+  stroke(myColor);
+  strokeWeight(3);
+  fill(myColor);
+  translate(base.x, base.y);
+  line(0, 0, vec.x, vec.y);
+  rotate(vec.heading());
+  let arrowSize = 7;
+  translate(vec.mag() - arrowSize, 0);
+  triangle(0, arrowSize / 2, 0, -arrowSize / 2, arrowSize, 0);
+  pop();
+}
+```
+
+<img width="541" height="507" alt="image" src="https://github.com/user-attachments/assets/7d7119b2-b112-4ad1-914d-ee4e18e59293" />
 
