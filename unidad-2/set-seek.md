@@ -161,3 +161,61 @@ function drawArrow(base, vec, myColor) {
 
 
 ### Actividad 6
+
+Motion 101 es un marco básico de movimiento que usa tres vectores: posición, velocidad y aceleración. Geométricamente, cada frame se suman estos vectores en orden: aceleración a velocidad, velocidad a posición.
+
+```js
+let mover;
+
+function setup() {
+  createCanvas(600, 400);
+  mover = new Mover();
+}
+
+function draw() {
+  background(220);
+  mover.update();
+  mover.checkEdges();
+  mover.show();
+}
+
+class Mover {
+  constructor() {
+    this.position = createVector(random(width), random(height));
+    this.velocity = createVector(random(-2, 2), random(-2, 2));
+  }
+
+  update() {
+    this.position.add(this.velocity);
+  }
+
+  show() {
+    stroke(0);
+    fill(175);
+    circle(this.position.x, this.position.y, 48);
+  }
+
+  checkEdges() {
+    if (this.position.x > width) {
+      this.position.x = 0;
+    } else if (this.position.x < 0) {
+      this.position.x = width;
+    }
+
+    if (this.position.y > height) {
+      this.position.y = 0;
+    } else if (this.position.y < 0) {
+      this.position.y = height;
+    }
+  }
+}
+```
+
+### Actividad 7 
+
+Aceleración constante:
+El objeto se mueve cada vez más rápido en la misma dirección.
+	•	Aceleración aleatoria:
+El movimiento es caótico, como si el objeto estuviera siendo empujado al azar.
+	•	Aceleración hacia el mouse:
+El objeto parece “perseguir” el mouse, con un movimiento que se ajusta suavemente hacia su posición.
