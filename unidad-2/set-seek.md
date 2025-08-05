@@ -159,3 +159,5 @@ function drawArrow(base, vec, myColor) {
 
 <img width="541" height="507" alt="image" src="https://github.com/user-attachments/assets/7d7119b2-b112-4ad1-914d-ee4e18e59293" />
 
+
+### Actividad 6
