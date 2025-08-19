@@ -103,3 +103,6 @@ function draw() {
   circle(mover.x, mover.y, 10);
 }
 ```
+
+<img width="403" height="294" alt="image" src="https://github.com/user-attachments/assets/d1ad50f5-615b-45ed-a379-4b5eb095ef99" />
+
