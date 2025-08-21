@@ -13,9 +13,13 @@
 4. modelar fuerzas es que aplicas leyes físicas (como gravedad, fricción, resistencia) que se convierten en fuerzas y crear algoritmos es que tu defines directamente cómo cambia la aceleración con una fórmula inventada (un ejemplo acc=noise) aqui la estamos definiendo por una formula 
 
 
-### Actividad 12
+### Parte 2
 
 1.En mi caso creo que lo más desafiante en la Actividad pasada fue la implementación de las fuerzas La idea creativa la tenía clara, pero se me hacia complejo desarrollarlo (por eso me ayude de chat) y ponerlo en codigo pero ya cuando llegue a la parte de la interactividad fue más intuitiva de resolver (mouse como imán, teclas del teclado).
 
 2. Sí, las fuerzas funcionaron como esperaba, aunque con un pequeño error, que es que se vuelven demasiado erraticas al poner el mouse cerca, la sorpresa fue ver que, cuando varias pelotas se juntaban, aparecían figuras muy estéticas como constelaciones sin haberlas planeado
+
+3.lo pienso mas ahora como un recurso creativo fuerzas como gravedad, fricción o ruido no son solo cálculos también son pinceles para dibujar movimiento y generar visuales
+
+### Actividad 12
 
