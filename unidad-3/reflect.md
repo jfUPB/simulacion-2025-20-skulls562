@@ -21,5 +21,8 @@
 
 3.lo pienso mas ahora como un recurso creativo fuerzas como gravedad, fricción o ruido no son solo cálculos también son pinceles para dibujar movimiento y generar visuales
 
+4. algunas fuerzas como resortes (Hooke), repulsión tipo carga eléctrica, atracción/repulsión por zonas (campos), resistencia variable por “fluidos”, colisiones suaves con amortiguación.
+
 ### Actividad 12
+
 
