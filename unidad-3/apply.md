@@ -3,6 +3,21 @@
 
 ## 🛠 Fase: Apply
 
+### Actividad 10
+
+Quise inspirarme en el problema de los n-cuerpos y en los móviles de Alexander Calder. Mi idea fue crear un sistema de pelotas que se atraen entre sí como planetas, pero que a veces forman “móviles” temporales, como si fueran pequeñas esculturas cinéticas en movimiento  Cuando dos pelotas se acercan mucho, aparecen barras y contrapesos que evocan a los móviles de Calder. Esto le da un aire escultórico a la simulación y hace que no sea solo física, sino también una obra artística en movimiento.
+
+El usuario puede mover el mouse para crear un imán que atrae las pelotas, y con la rueda cambiar la fuerza de la gravedad. También incluí teclas para limpiar la pantalla o pausar, de modo que uno pueda “componer” diferentes escenas en tiempo real.
+
+Que estoy usando 
+
+Perlin noise: lo usé para generar un viento suave que cambia el movimiento de las pelotas y hace que los enlaces entre ellas se curven como si flotaran.
+
+randomGaussian(): lo utilicé para darles velocidades iniciales más naturales, con variaciones que se sienten más orgánicas que un simple random uniforme.
+
+Modelado del problema de n-cuerpos:
+Cada pelota tiene una masa y se atrae con todas las demás usando la fórmula de la gravedad.
+
 ```js
 // N-cuerpos — Móvil cósmico + referencia a Calder (móviles efímeros)
 // Mouse: arrastra = imán | Rueda: G | N: viento por ruido | A: Calder ON/OFF | C: limpiar | P: pausa
