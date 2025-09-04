@@ -3,23 +3,23 @@
 ## Explicación conceptual de la obra
 
 * ¿Qué concepto de la unidad 4 y cómo lo aplicaste en la obra?
-> Tu respuesta aquí:
+> Usé movimiento oscilatorio: una cortina de péndulos y una ola con fase compartida que la música excita y modula, con armónicos suaves para definir crestas.
 >
 
 * ¿Qué concepto de la unidad 3 y cómo lo aplicaste en la obra?
-> Tu respuesta aquí:
+> Apliqué fuerzas acumulativas para que la amplitud de la ola cambie de forma suave hacia un objetivo guiado por la canción; además, los “golpes” (mouse/partículas) generan perturbaciones que nacen y se disipan.
 >
 
 * ¿Qué concepto de la unidad 2 y cómo lo aplicaste en la obra?
-> Tu respuesta aquí:
+> Usé Motion 101 en las partículas: se mueven con posición y velocidad, rebotan en bordes y, al cruzar la ola, alteran su forma y ritmo.
 >
 
 * ¿Qué concepto de la unidad 1 y cómo lo aplicaste en la obra?
-> Tu respuesta aquí:
+> Incorporé ruido Perlin para una textura orgánica en la ola, pequeñas diferencias entre péndulos y una paleta que cambia sin saltos.
 >
 
 ## ¿Cómo resolviste la interacción?
-> Tu respuesta aquí:
+> El usuario sube una canción; el sistema toma amplitud y bandas para animar ola, cortina y color. El mouse controla forma e intensidad y añade rizos locales. Las partículas recorren el fondo negro y, al colisionar, deforman la ola. Todo ocurre en tiempo real con una estética limpia y responsiva.
 >
 
 ## Enlace a la obra en el editor de p5.js
@@ -300,6 +300,7 @@ function keyPressed(){ if(key==='s'||key==='S'){ saveCanvas('captura','png'); } 
 
 
 <img width="913" height="569" alt="image" src="https://github.com/user-attachments/assets/6242f558-a3fb-4149-b515-44c670dc5bb5" />
+
 
 
 
