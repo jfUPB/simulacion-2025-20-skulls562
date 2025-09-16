@@ -255,3 +255,147 @@ class Particle {
 
 Link: https://editor.p5js.org/skulls562/sketches/sOevyEYez
 
+# Punto 3 Herencia y polimorfismo
+
+Codigo Original
+
+```js
+let emitter;
+
+function setup() {
+  createCanvas(640, 360);
+  emitter = new Emitter(width/2, height/2);
+}
+
+function draw() {
+  background(255);
+  emitter.addParticle();   // agrega distintos tipos
+  emitter.run();
+}
+
+class Emitter {
+  constructor(x, y){ this.origin = createVector(x, y); this.particles=[]; }
+  addParticle(){
+    if (random() < 0.5) this.particles.push(new Particle(this.origin));
+    else this.particles.push(new CrazyParticle(this.origin)); // subclase
+  }
+  run(){
+    for (let i = this.particles.length-1; i>=0; i--){
+      const p = this.particles[i];
+      p.run();
+      if (p.isDead()) this.particles.splice(i,1);
+    }
+  }
+}
+
+class Particle {
+  constructor(o){ this.pos=o.copy(); this.vel=p5.Vector.random2D(); this.acc=createVector(); this.lifespan=255; }
+  applyForce(f){ this.acc.add(f); }
+  update(){ this.vel.add(this.acc); this.pos.add(this.vel); this.acc.mult(0); this.lifespan-=2; }
+  show(){ noStroke(); fill(0,this.lifespan); circle(this.pos.x,this.pos.y,6); }
+  isDead(){ return this.lifespan<=0; }
+  run(){ this.update(); this.show(); }
+}
+
+class CrazyParticle extends Particle {
+  show(){ super.show(); } // (estético diferente en el ejemplo completo)
+}
+```
+
+Original
+
+<img width="454" height="366" alt="image" src="https://github.com/user-attachments/assets/c7e540ef-2de4-4456-80ed-1da7687cbf0a" />
+
+Modificacion
+
+Aplicamos movimiento angular en dos subclases con rotación distinta SpinnerParticle con velocidad angular constante y TorqueParticle con aceleración angular usando ruido.
+
+Optimizacion
+
+Mantengo lifespan y borrado backward y polimorfismo solo afecta el dibujo, no la gestión de memoria.
+
+Imagen 
+
+<img width="455" height="420" alt="image" src="https://github.com/user-attachments/assets/6ef0bf71-23a3-4a3e-b1c6-5ab60b512523" />
+
+
+Codigo
+
+```js
+let emitter;
+
+function setup() {
+  createCanvas(640, 360);
+  emitter = new Emitter(width/2, height/2);
+}
+
+function draw() {
+  background(250);
+  emitter.addParticle();
+  emitter.run();
+}
+
+class Emitter {
+  constructor(x, y) {
+    this.origin = createVector(x, y);
+    this.particles = [];
+  }
+  addParticle() {
+    if (random() < 0.5) this.particles.push(new SpinnerParticle(this.origin));
+    else this.particles.push(new TorqueParticle(this.origin));
+  }
+  run() {
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.run();
+      if (p.isDead()) this.particles.splice(i, 1);
+    }
+  }
+}
+
+class Particle {
+  constructor(origin) {
+    this.pos = origin.copy();
+    this.vel = p5.Vector.random2D().mult(random(0.5, 2));
+    this.acc = createVector();
+    this.lifespan = 255;
+    this.theta = random(TWO_PI);
+  }
+  applyForce(f){ this.acc.add(f); }
+  update(){
+    this.vel.add(this.acc);
+    this.pos.add(this.vel);
+    this.acc.mult(0);
+    this.lifespan -= 2;
+  }
+  baseShow(){
+    push(); translate(this.pos.x, this.pos.y); noStroke(); fill(30, this.lifespan);
+    rectMode(CENTER); rect(0,0,10,4); pop();
+  }
+  isDead(){ return this.lifespan <= 0; }
+  run(){ this.update(); this.show(); }
+}
+
+class SpinnerParticle extends Particle {
+  constructor(o){ super(o); this.omega = random(-0.1, 0.1); }
+  show(){
+    push(); translate(this.pos.x, this.pos.y); rotate(this.theta);
+    noStroke(); fill(10, this.lifespan); rectMode(CENTER); rect(0,0,12,4); pop();
+    this.theta += this.omega;
+  }
+}
+
+class TorqueParticle extends Particle {
+  constructor(o){ super(o); this.omega = 0; this.alpha = 0; }
+  show(){
+    this.alpha = map(noise(frameCount*0.01 + this.pos.x), 0, 1, -0.02, 0.02);
+    this.omega += this.alpha;
+    this.theta += this.omega;
+    push(); translate(this.pos.x, this.pos.y); rotate(this.theta);
+    noStroke(); fill(0, this.lifespan); rectMode(CENTER); rect(0,0,16,3); pop();
+  }
+}
+```
+
+Link: https://editor.p5js.org/skulls562/sketches/vn4YObQ_P
+
