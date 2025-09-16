@@ -399,3 +399,134 @@ class TorqueParticle extends Particle {
 
 Link: https://editor.p5js.org/skulls562/sketches/vn4YObQ_P
 
+# Punto 4 Sistema de particulas con fuezas
+
+Codigo original
+
+```js
+let emitter;
+
+function setup(){
+  createCanvas(640,360);
+  emitter = new Emitter(width/2, 40);
+}
+
+function draw(){
+  background(255);
+  let gravity = createVector(0, 0.1);
+  emitter.applyForce(gravity);
+  emitter.addParticle();
+  emitter.run();
+}
+
+class Emitter {
+  constructor(x,y){ this.origin=createVector(x,y); this.particles=[]; }
+  addParticle(){ this.particles.push(new Particle(this.origin.x,this.origin.y)); }
+  applyForce(f){ for (let p of this.particles) p.applyForce(f); }
+  run(){
+    for (let i=this.particles.length-1;i>=0;i--){
+      let p=this.particles[i];
+      p.run();
+      if (p.isDead()) this.particles.splice(i,1);
+    }
+  }
+}
+
+class Particle {
+  constructor(x,y){
+    this.pos=createVector(x,y);
+    this.vel=p5.Vector.random2D();
+    this.acc=createVector();
+    this.lifespan=255;
+  }
+  applyForce(f){ this.acc.add(f); }
+  update(){ this.vel.add(this.acc); this.pos.add(this.vel); this.acc.mult(0); this.lifespan-=2; }
+  show(){ noStroke(); fill(0,this.lifespan); circle(this.pos.x,this.pos.y,6); }
+  isDead(){ return this.lifespan<=0; }
+  run(){ this.update(); this.show(); }
+}
+```
+
+Original
+
+<img width="305" height="372" alt="image" src="https://github.com/user-attachments/assets/39f5fc3a-511a-4a8e-a898-40bbaa09f871" />
+
+
+Modificacion
+
+agrego fuerza sinusoidal lateral por partícula tratando con las ocilaciones de la unidad pasada
+
+Optimizaciones
+
+igual que el original: lifespan decrece y borrado backward y la fuerza oscilatoria no aumenta el conteo de objetos
+
+Imagen 
+
+<img width="383" height="458" alt="image" src="https://github.com/user-attachments/assets/00672aa9-4c71-476e-acc9-8db9df020a67" />
+
+
+Codigo
+
+```js
+let emitter;
+
+function setup() {
+  createCanvas(640, 360);
+  emitter = new Emitter(width/2, 40);
+}
+
+function draw() {
+  background(250);
+
+  let gravity = createVector(0, 0.12);
+  emitter.applyForce(gravity);
+
+  emitter.addParticle();
+  emitter.run();
+}
+
+class Emitter {
+  constructor(x, y) {
+    this.origin = createVector(x, y);
+    this.particles = [];
+  }
+  addParticle(){ this.particles.push(new Particle(this.origin.x, this.origin.y)); }
+  applyForce(f){ for (let p of this.particles) p.applyForce(f); }
+  run(){
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.applyOscillation();
+      p.run();
+      if (p.isDead()) this.particles.splice(i, 1);
+    }
+  }
+}
+
+class Particle {
+  constructor(x, y) {
+    this.pos = createVector(x, y);
+    this.vel = p5.Vector.random2D().mult(random(0.5, 2));
+    this.acc = createVector();
+    this.lifespan = 255;
+    this.phase = random(TWO_PI);
+  }
+  applyForce(f){ this.acc.add(f); }
+  applyOscillation(){
+    const A = 0.08;   // amplitud
+    const w = 0.15;   // frecuencia
+    const fx = A * sin(frameCount * w + this.phase);
+    this.applyForce(createVector(fx, 0));
+  }
+  update(){
+    this.vel.add(this.acc);
+    this.pos.add(this.vel);
+    this.acc.mult(0);
+    this.lifespan -= 2;
+  }
+  show(){ noStroke(); fill(20, this.lifespan); circle(this.pos.x, this.pos.y, 6); }
+  isDead(){ return this.lifespan <= 0; }
+  run(){ this.update(); this.show(); }
+}
+```
+
+Link: https://editor.p5js.org/skulls562/sketches/cITubjtuv
