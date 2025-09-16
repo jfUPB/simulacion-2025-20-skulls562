@@ -102,3 +102,156 @@ class Particle {
 ```
 
 Link: https://editor.p5js.org/skulls562/sketches/qxX1XGcUH
+
+# Punto 2 sistema de un sistema 
+
+Codigo original
+
+```js 
+let emitters = [];
+
+function setup() {
+  createCanvas(640, 360);
+}
+
+function draw() {
+  background(255);
+  if (mouseIsPressed) {
+    emitters.push(new Emitter(mouseX, mouseY));
+  }
+  for (let i = emitters.length - 1; i >= 0; i--) {
+    emitters[i].addParticle();
+    emitters[i].run();
+    // (el ejemplo base normalmente no elimina emisores)
+  }
+}
+
+class Emitter {
+  constructor(x, y) {
+    this.origin = createVector(x, y);
+    this.particles = [];
+  }
+  addParticle() { this.particles.push(new Particle(this.origin.x, this.origin.y)); }
+  run() {
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.run();
+      if (p.isDead()) this.particles.splice(i, 1);
+    }
+  }
+}
+
+class Particle {
+  constructor(x, y) {
+    this.pos = createVector(x, y);
+    this.vel = p5.Vector.random2D();
+    this.acc = createVector();
+    this.lifespan = 255;
+  }
+  applyForce(f) { this.acc.add(f); }
+  update() {
+    this.vel.add(this.acc);
+    this.pos.add(this.vel);
+    this.acc.mult(0);
+    this.lifespan -= 2;
+  }
+  show() { noStroke(); fill(0, this.lifespan); circle(this.pos.x, this.pos.y, 6); }
+  isDead() { return this.lifespan <= 0; }
+  run(){ this.update(); this.show(); }
+}
+```
+
+Original
+
+<img width="880" height="328" alt="image" src="https://github.com/user-attachments/assets/5530b137-1907-41dc-9eeb-ea8121501c6f" />
+
+
+Modificaciones
+
+Añado fricción lineal F = -c·v en cada partícula para estabilizar además, limito la emisión por emisor y elimino el emisor cuando ya no tiene partículas ni cupos, esto es algo que vimos en la unidad 2
+
+Optimizacion
+
+Borrado backward de partículas con splice y creamos un cap de spawn por emisor y remoción del emisor vacío para evitar crecimiento indefinido del arreglo de sistemas.
+
+
+Imagen 
+
+<img width="747" height="417" alt="image" src="https://github.com/user-attachments/assets/03934498-858c-41ec-82da-8a185711cbfa" />
+
+Codigo 
+
+```js
+let emitters = [];
+
+function setup() {
+  createCanvas(640, 360);
+}
+
+function draw() {
+  background(250);
+
+  if (mouseIsPressed) {
+    emitters.push(new Emitter(mouseX, mouseY, 120)); // emite máx. 120
+  }
+
+  for (let i = emitters.length - 1; i >= 0; i--) {
+    const e = emitters[i];
+    e.addParticle();
+    e.run();
+    if (e.isFinished()) emitters.splice(i, 1);
+  }
+}
+
+class Emitter {
+  constructor(x, y, maxSpawn = 200) {
+    this.origin = createVector(x, y);
+    this.particles = [];
+    this.spawned = 0;
+    this.maxSpawn = maxSpawn;
+  }
+  addParticle() {
+    if (this.spawned < this.maxSpawn) {
+      this.particles.push(new Particle(this.origin.x, this.origin.y));
+      this.spawned++;
+    }
+  }
+  run() {
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.applyFriction(0.02); // Unidad 2
+      p.run();
+      if (p.isDead()) this.particles.splice(i, 1);
+    }
+  }
+  isFinished() {
+    return this.spawned >= this.maxSpawn && this.particles.length === 0;
+  }
+}
+
+class Particle {
+  constructor(x, y) {
+    this.pos = createVector(x, y);
+    this.vel = p5.Vector.random2D().mult(random(1, 3));
+    this.acc = createVector();
+    this.lifespan = 255;
+  }
+  applyForce(f) { this.acc.add(f); }
+  applyFriction(c) {
+    let friction = this.vel.copy().mult(-1).setMag(c);
+    this.applyForce(friction);
+  }
+  update() {
+    this.vel.add(this.acc);
+    this.pos.add(this.vel);
+    this.acc.mult(0);
+    this.lifespan -= 2;
+  }
+  show(){ noStroke(); fill(0, this.lifespan); circle(this.pos.x, this.pos.y, 6); }
+  isDead(){ return this.lifespan <= 0; }
+  run(){ this.update(); this.show(); }
+}
+```
+
+Link: https://editor.p5js.org/skulls562/sketches/sOevyEYez
+
