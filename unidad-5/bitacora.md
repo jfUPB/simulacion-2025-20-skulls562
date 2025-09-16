@@ -7,3 +7,98 @@ Al revisar la página de Refik Anadol me llamó la atención cómo utiliza grand
 
 <img width="343" height="613" alt="image" src="https://github.com/user-attachments/assets/91f0087d-8d4a-4d1a-a706-281ab36b5038" />
 (imagen de BIOME LUMINA #995/1000 el que mas me gusto)
+
+## Actividad 2 
+
+# Punto 1 Array de particulas 
+
+Codigo original
+
+```js
+let particles = [];
+
+function setup() {
+  createCanvas(640, 240);
+}
+
+function draw() {
+  background(255);
+  particles.push(new Particle(width / 2, 20));
+  //{!1} Loop through the array backward for deletion.
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let particle = particles[i];
+    particle.run();
+    if (particle.isDead()) {
+      particles.splice(i, 1);
+    }
+  }
+}
+```
+Original
+<img width="998" height="373" alt="image" src="https://github.com/user-attachments/assets/3dabfe9f-2bce-471e-825c-b28f9aaa8a04" />
+
+Modificacion 
+
+Aplico aceleración hacia el mouse, repasamos vectores, controlando magnitud para evitar explosiones de energía, mantiene el flujo estable sin tocar el esquema de memoria.
+
+
+Optimizacion de memoria 
+
+En cada draw() se empuja una partícula nueva al arreglo este se itera de atrás hacia adelante y si particle.isDead() es true, se elimina con splice(i,1), controlando el tamaño del arreglo
+
+Imagen 
+
+<img width="779" height="222" alt="image" src="https://github.com/user-attachments/assets/d887c0c5-eb55-4f37-be30-c56cf344bc4f" />
+
+Codigo
+
+```js
+let particles = [];
+const MAX_SPEED = 3;
+
+function setup() {
+  createCanvas(640, 360);
+}
+
+function draw() {
+  background(250);
+  particles.push(new Particle(width/2, 20));
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.seek(createVector(mouseX, mouseY));
+    p.run();
+    if (p.isDead()) particles.splice(i, 1);
+  }
+}
+
+class Particle {
+  constructor(x, y) {
+    this.pos = createVector(x, y);
+    this.vel = p5.Vector.random2D().mult(random(0.5, 2));
+    this.acc = createVector();
+    this.lifespan = 255;
+  }
+  applyForce(f) { this.acc.add(f); }
+  seek(target) {
+    let desired = p5.Vector.sub(target, this.pos).setMag(0.2); // “fuerza” suave
+    this.applyForce(desired);
+  }
+  update() {
+    this.vel.add(this.acc);
+    this.vel.limit(MAX_SPEED);   // Unidad 1: limitación de velocidad
+    this.pos.add(this.vel);
+    this.acc.mult(0);
+    this.lifespan -= 2;
+  }
+  show() {
+    noStroke();
+    fill(30, this.lifespan);
+    circle(this.pos.x, this.pos.y, 6);
+  }
+  isDead() { return this.lifespan <= 0; }
+  run() { this.update(); this.show(); }
+}
+```
+
+Link: https://editor.p5js.org/skulls562/sketches/qxX1XGcUH
