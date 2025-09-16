@@ -530,3 +530,144 @@ class Particle {
 ```
 
 Link: https://editor.p5js.org/skulls562/sketches/cITubjtuv
+
+# Punto 5 Sistema con repulsor
+
+Codigo original
+
+```js
+let emitter, repeller;
+
+function setup(){
+  createCanvas(640,360);
+  emitter = new Emitter(width/2, 30);
+  repeller = new Repeller(width/2, height-80, 40);
+}
+
+function draw(){
+  background(255);
+  emitter.addParticle();
+
+  let gravity = createVector(0, 0.1);
+  emitter.applyForce(gravity);
+
+  for (let p of emitter.particles) {
+    p.applyForce(repeller.repel(p));
+  }
+
+  emitter.run();
+  repeller.show();
+}
+
+// (Emitter, Particle y Repeller como en el ejemplo base)
+```
+
+Original
+
+<img width="376" height="323" alt="image" src="https://github.com/user-attachments/assets/5d80fe30-3aab-4700-93fa-82a4958a4d71" />
+
+Modificaciones
+
+arrastre cuadrático en una zona de fluido para disipar energía cuando la repulsión acelera demasiado
+
+Optimizacion
+
+Mismo patrón: lifespan + borrado backward en el emisor y el fluido no crea objetos extra por partícula, solo calcula una fuerza cuando está dentro de la región.
+
+Imagen 
+
+<img width="408" height="438" alt="image" src="https://github.com/user-attachments/assets/726c9397-e288-4b70-bc9d-a65d3c226ab3" />
+
+Codigo
+
+```js
+let emitter, repeller, fluid;
+
+function setup() {
+  createCanvas(640, 360);
+  emitter = new Emitter(width/2, 30);
+  repeller = new Repeller(width/2, height-80, 50);
+  fluid = new Fluid(0.0008, 0, height*0.45, width, height*0.55); // zona inferior
+}
+
+function draw() {
+  background(248);
+
+  emitter.addParticle();
+
+  let gravity = createVector(0, 0.1);
+  emitter.applyForce(gravity);
+
+  for (let p of emitter.particles) {
+    p.applyForce(repeller.repel(p));
+    if (fluid.contains(p)) p.applyForce(fluid.drag(p)); // arrastre cuadrático
+  }
+
+  emitter.run();
+  repeller.show();
+  fluid.show();
+}
+
+class Emitter {
+  constructor(x, y) {
+    this.origin = createVector(x, y);
+    this.particles = [];
+  }
+  addParticle(){ this.particles.push(new Particle(this.origin.x, this.origin.y)); }
+  applyForce(f){ for (let p of this.particles) p.applyForce(f); }
+  run(){
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      let p = this.particles[i];
+      p.run();
+      if (p.isDead()) this.particles.splice(i, 1);
+    }
+  }
+}
+
+class Particle {
+  constructor(x, y) {
+    this.pos = createVector(x, y);
+    this.vel = p5.Vector.random2D().mult(random(0.5, 2));
+    this.acc = createVector();
+    this.lifespan = 255;
+    this.mass = 1;
+  }
+  applyForce(f){ this.acc.add(p5.Vector.div(f, this.mass)); }
+  update(){
+    this.vel.add(this.acc);
+    this.pos.add(this.vel);
+    this.acc.mult(0);
+    this.lifespan -= 2;
+  }
+  show(){ noStroke(); fill(0, this.lifespan); circle(this.pos.x, this.pos.y, 6); }
+  isDead(){ return this.lifespan <= 0; }
+  run(){ this.update(); this.show(); }
+}
+
+class Repeller {
+  constructor(x, y, r=40) {
+    this.pos = createVector(x, y); this.r = r; this.strength = 100;
+  }
+  repel(p){
+    let dir = p5.Vector.sub(p.pos, this.pos);
+    let d = constrain(dir.mag(), 5, 200);
+    dir.normalize();
+    let force = this.strength / (d * d);
+    return dir.mult(force);
+  }
+  show(){ noFill(); stroke(200, 40, 40); circle(this.pos.x, this.pos.y, this.r*2); }
+}
+
+class Fluid {
+  constructor(k, x, y, w, h){ this.k=k; this.x=x; this.y=y; this.w=w; this.h=h; }
+  contains(p){ return p.pos.x>this.x && p.pos.x<this.x+this.w && p.pos.y>this.y && p.pos.y<this.y+this.h; }
+  drag(p){
+    let speed = p.vel.mag();
+    let dragMag = this.k * speed * speed;
+    return p.vel.copy().mult(-1).setMag(dragMag);
+  }
+  show(){ noStroke(); fill(100,120,255,30); rect(this.x, this.y, this.w, this.h); }
+}
+```
+
+Link: https://editor.p5js.org/skulls562/sketches/J3paYFA9x
