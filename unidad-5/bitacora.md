@@ -671,3 +671,686 @@ class Fluid {
 ```
 
 Link: https://editor.p5js.org/skulls562/sketches/J3paYFA9x
+
+
+## Actividad 3
+
+Apply
+
+# 1 Concepto
+
+Un mapa vivo genera islas y un río que las conecta. Las partículas se comportan como olas y espuma; los barquitos navegan el flujo y dejan estelas. El usuario no pinta, compone corrientes y relieve para observar cómo emergen patrones.
+
+Qué quiero comunicar: La memoria colectiva como flujo que conecta territorios; algunas huellas se depositan en la orilla, otras migran y se disipan.
+
+
+# 2 Que uso de Herencia y polimorfismo
+
+Clase base: Particle (pos, vel, acc, mass, lifespan, run(), applyForce()).
+Subclases (polimórficas):
+WaveCrest: cresta de ola dibujada como línea perpendicular a la velocidad; oscilación sutil y brillo cerca de costa.
+WaveFoam: espuma de corta vida (usa el drag para disiparse rápido).
+
+
+# 3 Que uso de otras unidades
+
+U1 – Motion 101: vectores posición–velocidad–aceleración, vel.limit(), steering al campo de flujo.
+U2 – Fuerzas: campo de flujo del río (−∇height), arrastre cuadrático en agua, atractor/repulsor local, fricción contextual en orillas.
+U3 – Angular: orientación de barcos según rumbo; pequeñas rotaciones locales en partículas cerca de la costa.
+U4 – Oscilaciones: seno para mecer crestas y espuma; modulación lateral de trayectoria.
+
+# 4 Gestion de optimizacion
+
+Por partícula: lifespan decreciente + eliminación backward con splice(i,1).
+Por emisor: cupo máximo; cuando agota y queda sin partículas, se elimina.
+Cap global: MAX_PARTICLES para mantener FPS; si se alcanza, pausa el spawn.
+Disipación: drag cuadrático en agua acelera la “muerte útil” de las partículas.
+
+# 5 interactividad
+
+Click: emisor en agua (si haces click en tierra, busca agua cercana).
+Shift+arrastrar: esculpir (Ctrl para bajar).
+R: nuevo mapa. F: drag. A: atractor. P: asentamientos.
+B: añadir barquito en agua.
+↑/↓: spawn rate. +/-: nivel del mar. [ ]: brocha.
+S: guardar captura.
+
+
+# 6 Codigo
+
+```js
+// Archipiélago de Corrientes — Río + Islas + Barcos + Olas
+// Ajustes pedidos:
+// - Tierra en verde (más altura = más verde oscuro).
+// - Barquitos que navegan el río, evitan islas, reaccionan al atractor y dejan estela.
+// - Las partículas ahora son OLAS (crestas/espuma) que interactúan con costa/flujo.
+
+// ---------- Parámetros del mapa ----------
+let cellSize = 6;
+let gridW, gridH;
+let baseHeight, sculptOffset, gradX, gradY;
+let seaLevel = 0.52;
+let noiseScale = 0.008;
+let islandScale = 1.0;
+let noiseZ = 0;
+// --- Esculpido del terreno ---
+let brushRadius = 3;       // tamaño de la brocha (en celdas)  — ajusta con [ y ]
+let brushStrength = 0.08;  // fuerza del trazo                   — Shift+arrastrar (Ctrl para bajar)
+
+
+// ---------- Render ----------
+let waterCol, landLoCol, landHiCol, shoreCol;
+
+// ---------- Interacción / toggles ----------
+let fluidOn = true;
+let attractorOn = false;
+let settlementsMode = false;
+
+// ---------- Asentamientos (opcional, se conservan) ----------
+let settlements = []; // {x,y,r,strength}
+
+// ---------- Emisores y partículas (olas) ----------
+let emitters = [];
+let emissionRate = 4;
+const MAX_PARTICLES = 1200; // subí un poco el cap para las olas
+let ambientParticles = [];  // olas sueltas (estelas de barcos, etc.)
+
+// ---------- Barcos ----------
+let boats = [];
+
+function setup() {
+  createCanvas(960, 540);
+  pixelDensity(1);
+
+  gridW = floor(width / cellSize);
+  gridH = floor(height / cellSize);
+
+  baseHeight   = makeGrid(gridW, gridH, 0);
+  sculptOffset = makeGrid(gridW, gridH, 0);
+  gradX        = makeGrid(gridW, gridH, 0);
+  gradY        = makeGrid(gridW, gridH, 0);
+
+  // Agua azul
+  waterCol = color(40, 120, 190);
+  // Tierra en verde (claro -> oscuro con la altura)
+  landLoCol = color(120, 170, 120); // verde claro
+  landHiCol = color(22, 70, 42);    // verde oscuro
+  shoreCol  = color(230, 245, 210); // línea de costa suave
+
+  regenerateMap();
+
+  // Emisor inicial en zona alta/mixta (ponlo donde quieras)
+  emitters.push(new Emitter(width*0.5, height*0.25, 220));
+
+  // Tres barquitos de arranque en zonas de agua
+  for (let i = 0; i < 3; i++) {
+    const p = randomWaterPoint(200);
+    if (p) boats.push(new Boat(p.x, p.y));
+  }
+}
+
+function draw() {
+  background(12);
+
+  // Actualizar gradiente (campo de flujo)
+  updateGradients();
+
+  // Dibujar mapa verde/azul
+  drawTerrain();
+
+  // Asentamientos (si los usas)
+  drawSettlements();
+
+  // ------- EMISORES / OLAS (con cap global) -------
+  let total = totalParticles();
+  for (let i = emitters.length - 1; i >= 0; i--) {
+    const e = emitters[i];
+
+    const canSpawn = total < MAX_PARTICLES;
+    const n = canSpawn ? emissionRate : 0;
+    e.spawn(n);
+    total += e.justSpawned;
+
+    // Fuerzas
+    e.applyFlow();
+    if (fluidOn) e.applyWaterDrag();
+    if (attractorOn) e.applyAttractor(mouseX, mouseY, 160, 120);
+    e.applySettlementAttractors();
+
+    e.run();
+
+    if (e.isFinished()) emitters.splice(i, 1);
+  }
+
+  // ------- BARQUITOS -------
+  for (const b of boats) {
+    b.applyFlow();
+    if (attractorOn) b.applyAttractor(mouseX, mouseY, 180, 120);
+    b.avoidLand();
+    b.applyWaterDrag();
+    b.run();
+    // Wake (estela): pequeñas olas espuma
+    if (frameCount % 2 === 0) {
+      const tail = p5.Vector.mult(b.vel.copy().normalize(), -10);
+      const pos = p5.Vector.add(b.pos, tail);
+      if (isWater(pos.x, pos.y) && totalParticles() < MAX_PARTICLES) {
+        ambientParticles.push(new WaveFoam(pos.x, pos.y, 0.65)); // espuma breve
+      }
+    }
+  }
+
+  // ------- OLAS SUELTAS (estelas, etc.) -------
+  for (let i = ambientParticles.length - 1; i >= 0; i--) {
+    const p = ambientParticles[i];
+    // Igual que las demás: flujo + drag opcional
+    const flow = sampleGradient(p.pos.x, p.pos.y);
+    p.applyForce(flow);
+    if (fluidOn) {
+      const speed = p.vel.mag();
+      const mag = p.dragK * speed * speed;
+      const drag = p.vel.copy().mult(-1).setMag(mag);
+      p.applyForce(drag);
+    }
+    p.run();
+    if (p.isDead()) ambientParticles.splice(i, 1);
+  }
+
+  // HUD
+  noStroke(); fill(235); textSize(12);
+  text(
+    `Emisores: ${emitters.length} | Olas: ${totalParticles()} | Barcos: ${boats.length} | Rate: ${emissionRate}/emisor | NivelMar: ${seaLevel.toFixed(2)} | Brocha: ${brushRadius}`,
+    12, height - 12
+  );
+}
+
+// ===============================
+// INTERACCIÓN
+// ===============================
+function mousePressed() {
+  if (settlementsMode) {
+    if (isLand(mouseX, mouseY)) {
+      settlements.push({ x: mouseX, y: mouseY, r: 70, strength: 120 });
+    }
+    return;
+  }
+  // Crear emisor (si está en tierra, lo reubicamos a agua cercana si se puede)
+  const p = ensureWaterPosition(mouseX, mouseY, 80);
+  if (p) emitters.push(new Emitter(p.x, p.y, 200));
+}
+
+function mouseDragged() {
+  if (keyIsDown(SHIFT)) {
+    const lower = keyIsDown(CONTROL);
+    sculpt(mouseX, mouseY, brushRadius, brushStrength * (lower ? -1 : +1));
+  }
+}
+
+function keyPressed() {
+  if (key === 'r' || key === 'R') regenerateMap();
+  if (key === 'f' || key === 'F') fluidOn = !fluidOn;
+  if (key === 'a' || key === 'A') attractorOn = !attractorOn;
+  if (key === 'p' || key === 'P') settlementsMode = !settlementsMode;
+  if (key === 's' || key === 'S') saveCanvas('archipielago', 'png');
+
+  if (keyCode === UP_ARROW) emissionRate = constrain(emissionRate + 1, 0, 25);
+  if (keyCode === DOWN_ARROW) emissionRate = constrain(emissionRate - 1, 0, 25);
+
+  if (key === '+') seaLevel = min(seaLevel + 0.01, 0.95);
+  if (key === '-') seaLevel = max(seaLevel - 0.01, 0.05);
+  if (key === '[') brushRadius = max(1, brushRadius - 1);
+  if (key === ']') brushRadius += 1;
+
+  // Añadir barquito
+  if (key === 'b' || key === 'B') {
+    if (isWater(mouseX, mouseY)) boats.push(new Boat(mouseX, mouseY));
+    else {
+      const p = ensureWaterPosition(mouseX, mouseY, 80);
+      if (p) boats.push(new Boat(p.x, p.y));
+    }
+  }
+}
+
+// ===============================
+// MAPA / TERRENO / FLUJO
+// ===============================
+function regenerateMap() {
+  noiseZ = random(1000);
+  for (let y = 0; y < gridH; y++) {
+    for (let x = 0; x < gridW; x++) {
+      const u = x * cellSize, v = y * cellSize;
+      baseHeight[y][x] = terrainHeight(u, v, noiseZ);
+      sculptOffset[y][x] = 0;
+    }
+  }
+  updateGradients();
+}
+
+function terrainHeight(px, py, z) {
+  const nx = px * noiseScale;
+  const ny = py * noiseScale;
+  let h = 0, amp = 1, freq = 1;
+  for (let i = 0; i < 4; i++) {
+    h += amp * noise(nx * freq, ny * freq, z);
+    amp *= 0.5; freq *= 2.0;
+  }
+  h /= 1.875;
+  h = pow(h, 1.2) * islandScale;
+  return constrain(h, 0, 1);
+}
+
+function makeGrid(w, h, initVal=0) {
+  const g = new Array(h);
+  for (let j = 0; j < h; j++) {
+    g[j] = new Array(w);
+    for (let i = 0; i < w; i++) g[j][i] = initVal;
+  }
+  return g;
+}
+
+function updateGradients() {
+  for (let y = 0; y < gridH; y++) {
+    for (let x = 0; x < gridW; x++) {
+      const hL = getHeightAtCell(max(0, x-1), y);
+      const hR = getHeightAtCell(min(gridW-1, x+1), y);
+      const hU = getHeightAtCell(x, max(0, y-1));
+      const hD = getHeightAtCell(x, min(gridH-1, y+1));
+      gradX[y][x] = (hR - hL) * 0.5;
+      gradY[y][x] = (hD - hU) * 0.5;
+    }
+  }
+}
+
+function getHeightAtCell(cx, cy) {
+  return baseHeight[cy][cx] + sculptOffset[cy][cx];
+}
+
+function sampleHeight(px, py) {
+  const gx = constrain(px / cellSize, 0, gridW - 1.001);
+  const gy = constrain(py / cellSize, 0, gridH - 1.001);
+  const x0 = floor(gx), y0 = floor(gy);
+  const x1 = x0 + 1,   y1 = y0 + 1;
+  const tx = gx - x0,  ty = gy - y0;
+
+  const h00 = getHeightAtCell(x0, y0);
+  const h10 = getHeightAtCell(min(x1, gridW-1), y0);
+  const h01 = getHeightAtCell(x0, min(y1, gridH-1));
+  const h11 = getHeightAtCell(min(x1, gridW-1), min(y1, gridH-1));
+
+  const hx0 = lerp(h00, h10, tx);
+  const hx1 = lerp(h01, h11, tx);
+  return lerp(hx0, hx1, ty);
+}
+
+function sampleGradient(px, py) {
+  const gx = constrain(px / cellSize, 0, gridW - 1.001);
+  const gy = constrain(py / cellSize, 0, gridH - 1.001);
+  const x0 = floor(gx), y0 = floor(gy);
+  const x1 = x0 + 1,   y1 = y0 + 1;
+  const tx = gx - x0,  ty = gy - y0;
+
+  function bilinear(grid) {
+    const g00 = grid[y0][x0];
+    const g10 = grid[y0][min(x1, gridW-1)];
+    const g01 = grid[min(y1, gridH-1)][x0];
+    const g11 = grid[min(y1, gridH-1)][min(x1, gridW-1)];
+    const gx0 = lerp(g00, g10, tx);
+    const gx1 = lerp(g01, g11, tx);
+    return lerp(gx0, gx1, ty);
+  }
+
+  const gxv = bilinear(gradX);
+  const gyv = bilinear(gradY);
+  // Agua corre alto->bajo, usamos -grad como flujo base y amplificamos
+  return createVector(-gxv, -gyv).mult(2.2);
+}
+
+function isWater(px, py) {
+  return sampleHeight(px, py) < seaLevel;
+}
+function isLand(px, py) { return !isWater(px, py); }
+
+function nearShore(px, py, eps = 0.02) {
+  const h = sampleHeight(px, py);
+  return abs(h - seaLevel) < eps;
+}
+
+function sculpt(px, py, radiusCells, strength) {
+  const cx = floor(px / cellSize);
+  const cy = floor(py / cellSize);
+  for (let y = cy - radiusCells; y <= cy + radiusCells; y++) {
+    if (y < 0 || y >= gridH) continue;
+    for (let x = cx - radiusCells; x <= cx + radiusCells; x++) {
+      if (x < 0 || x >= gridW) continue;
+      const dx = x - cx;
+      const dy = y - cy;
+      const d = sqrt(dx*dx + dy*dy);
+      if (d <= radiusCells) {
+        const falloff = 1 - (d / (radiusCells + 0.0001));
+        sculptOffset[y][x] = constrain(sculptOffset[y][x] + strength * falloff, -0.6, +0.6);
+      }
+    }
+  }
+}
+
+function drawTerrain() {
+  noStroke();
+  for (let y = 0; y < gridH; y++) {
+    const py = y * cellSize;
+    for (let x = 0; x < gridW; x++) {
+      const px = x * cellSize;
+      const h = getHeightAtCell(x, y);
+      if (h < seaLevel) {
+        // agua: azul según profundidad
+        const t = map(h, 0, seaLevel, 0, 1, true);
+        const c = lerpColor(color(22, 70, 140), waterCol, t);
+        fill(c);
+      } else {
+        // tierra: VERDE — más altura => más oscuro
+        const t = map(h, seaLevel, 1, 0, 1, true);
+        const c = lerpColor(landLoCol, landHiCol, t);
+        fill(c);
+      }
+      rect(px, py, cellSize, cellSize);
+
+      // línea de costa sutil
+      if (abs(h - seaLevel) < 0.01) {
+        fill(shoreCol);
+        rect(px, py, cellSize, 1);
+      }
+    }
+  }
+}
+
+function drawSettlements() {
+  noFill();
+  stroke(255, 230, 120, 90);
+  for (const s of settlements) {
+    circle(s.x, s.y, s.r*2);
+    stroke(255, 230, 120, 200);
+    point(s.x, s.y);
+    stroke(255, 230, 120, 90);
+  }
+}
+
+// ===============================
+// UTILIDADES DE AGUA
+// ===============================
+function ensureWaterPosition(x, y, maxR = 60) {
+  if (isWater(x, y)) return createVector(x, y);
+  // busca agua cercana radialmente
+  const steps = 24;
+  for (let r = 6; r <= maxR; r += 6) {
+    for (let a = 0; a < TWO_PI; a += TWO_PI / steps) {
+      const px = x + cos(a) * r;
+      const py = y + sin(a) * r;
+      if (px >= 0 && px < width && py >= 0 && py < height && isWater(px, py)) {
+        return createVector(px, py);
+      }
+    }
+  }
+  return null;
+}
+
+function randomWaterPoint(tries = 300) {
+  for (let i = 0; i < tries; i++) {
+    const x = random(width), y = random(height);
+    if (isWater(x, y)) return createVector(x, y);
+  }
+  return null;
+}
+
+// ===============================
+// EMISORES / OLAS
+// ===============================
+function totalParticles() {
+  let t = ambientParticles.length;
+  for (const e of emitters) t += e.particles.length;
+  return t;
+}
+
+class Emitter {
+  constructor(x, y, maxSpawn = 200) {
+    this.origin = createVector(x, y);
+    this.particles = [];
+    this.maxSpawn = maxSpawn;
+    this.spawned = 0;
+    this.justSpawned = 0;
+  }
+  spawn(n) {
+    this.justSpawned = 0;
+    for (let i = 0; i < n; i++) {
+      if (this.spawned >= this.maxSpawn) break;
+      // Asegurar que la ola nace en agua
+      const p = ensureWaterPosition(this.origin.x, this.origin.y, 50);
+      if (!p) break;
+      this.particles.push(createWaveParticle(p.x, p.y));
+      this.spawned++; this.justSpawned++;
+    }
+  }
+  applyFlow() {
+    for (const p of this.particles) {
+      const flow = sampleGradient(p.pos.x, p.pos.y);
+      p.applyForce(flow);
+    }
+  }
+  applyAttractor(cx, cy, radius=160, strength=120) {
+    const center = createVector(cx, cy);
+    for (const p of this.particles) {
+      const dir = p5.Vector.sub(center, p.pos);
+      const d = dir.mag();
+      if (d < radius) {
+        dir.normalize();
+        const falloff = 1 - d / radius;
+        p.applyForce(dir.mult(strength * falloff));
+      }
+    }
+  }
+  applyWaterDrag() {
+    for (const p of this.particles) {
+      const speed = p.vel.mag();
+      const mag = p.dragK * speed * speed;
+      const drag = p.vel.copy().mult(-1).setMag(mag);
+      p.applyForce(drag);
+    }
+  }
+  applySettlementAttractors() {
+    if (settlements.length === 0) return;
+    for (const p of this.particles) {
+      for (const s of settlements) {
+        const dir = createVector(s.x, s.y).sub(p.pos);
+        const d = dir.mag();
+        if (d < s.r) {
+          dir.normalize();
+          const f = s.strength * (1 - d / s.r);
+          p.applyForce(dir.mult(f));
+        }
+      }
+    }
+  }
+  run() {
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.run();
+      if (p.isDead()) this.particles.splice(i, 1);
+    }
+  }
+  isFinished() { return this.spawned >= this.maxSpawn && this.particles.length === 0; }
+}
+
+// --------- Base "Partícula" (agente) ----------
+class Particle {
+  constructor(x, y) {
+    this.pos = createVector(x, y);
+    this.vel = p5.Vector.random2D().mult(random(0.3, 1.2));
+    this.acc = createVector();
+    this.mass = random(0.8, 1.2);
+    this.lifespan = 255;
+    this.phase = random(TWO_PI);
+    this.theta = random(TWO_PI);
+    this.dragK = 0.0018; // drag cuadrático base en agua
+  }
+  applyForce(f) { this.acc.add(p5.Vector.div(f, this.mass)); }
+  update() {
+    this.vel.add(this.acc);
+    this.vel.limit(3.0);
+    this.pos.add(this.vel);
+    this.acc.mult(0);
+    this.lifespan -= 1.8;
+  }
+  show() {}
+  isDead() {
+    return this.lifespan <= 0 ||
+           this.pos.x < -80 || this.pos.x > width + 80 ||
+           this.pos.y < -80 || this.pos.y > height + 80;
+  }
+  run(){ this.update(); this.show(); }
+}
+
+// --------- OLAS (herencia y polimorfismo) ---------
+function createWaveParticle(x, y) {
+  // 70% cresta, 30% espuma
+  return (random() < 0.7) ? new WaveCrest(x, y) : new WaveFoam(x, y, 1.0);
+}
+
+// Cresta: línea perpendicular a la velocidad, con oscilación
+class WaveCrest extends Particle {
+  constructor(x, y) {
+    super(x, y);
+    this.dragK = 0.0016;
+    this.ampl = random(2, 6);
+    this.w = random(0.15, 0.22);
+    this.col = color(220, 245, 255);
+  }
+  run() {
+    // Oscilación lateral (U4)
+    const fx = 0.05 * sin(frameCount * this.w + this.phase);
+    this.applyForce(createVector(fx, 0));
+    super.run();
+  }
+  show() {
+    // normal (perpendicular a dirección)
+    const v = this.vel.copy();
+    const speed = max(0.001, v.mag());
+    const n = createVector(-v.y, v.x).setMag(this.ampl * (1 + 0.7 * sin(frameCount * this.w + this.phase)));
+    const p1 = p5.Vector.add(this.pos, n);
+    const p2 = p5.Vector.sub(this.pos, n);
+
+    // Más brillo cerca de costa
+    const near = nearShore(this.pos.x, this.pos.y, 0.03);
+    const a = near ? 255 : 180;
+
+    stroke(red(this.col), green(this.col), blue(this.col), a);
+    strokeWeight(1.6);
+    line(p1.x, p1.y, p2.x, p2.y);
+  }
+}
+
+// Espuma: burbuja rápida y corta vida (wake de barco, rompiente)
+class WaveFoam extends Particle {
+  constructor(x, y, lifeScale = 1.0) {
+    super(x, y);
+    this.dragK = 0.0025;
+    this.lifespan = 160 * lifeScale;
+    this.col = color(245, 250, 255);
+    this.size = random(2, 4);
+  }
+  run() {
+    // ligera oscilación y caída sutil hacia zonas de menor altura (más agua)
+    const fx = 0.03 * sin(frameCount * 0.2 + this.phase);
+    this.applyForce(createVector(fx, 0));
+    super.run();
+  }
+  show() {
+    noStroke();
+    fill(red(this.col), green(this.col), blue(this.col), this.lifespan);
+    circle(this.pos.x, this.pos.y, this.size);
+  }
+}
+
+// ===============================
+// BARCOS
+// ===============================
+class Boat {
+  constructor(x, y) {
+    this.pos = createVector(x, y);
+    this.vel = p5.Vector.random2D().mult(0.5);
+    this.acc = createVector();
+    this.mass = 3.0;
+    this.maxSpeed = 2.2;
+    this.dragK = 0.002; // drag cuadrático en agua
+    this.hull = color(255, 210, 120);
+  }
+  applyForce(f) { this.acc.add(p5.Vector.div(f, this.mass)); }
+  applyFlow() {
+    const f = sampleGradient(this.pos.x, this.pos.y).mult(0.9); // ganancia menor que olas (barco más pesado)
+    this.applyForce(f);
+  }
+  applyAttractor(cx, cy, radius=180, strength=120) {
+    const center = createVector(cx, cy);
+    const dir = p5.Vector.sub(center, this.pos);
+    const d = dir.mag();
+    if (d < radius) {
+      dir.normalize();
+      const falloff = 1 - d / radius;
+      this.applyForce(dir.mult(strength * falloff));
+    }
+  }
+  avoidLand() {
+    // si está sobre tierra o muy pegado a la costa, empujar hacia agua
+    const h = sampleHeight(this.pos.x, this.pos.y);
+    if (h >= seaLevel - 0.005) {
+      // usar -grad (bajada) para moverse a agua
+      const flow = sampleGradient(this.pos.x, this.pos.y);
+      // el flujo ya es -grad * gain; amplificar un poco
+      this.applyForce(flow.mult(2.0));
+      // leve repulsión perpendicular si la velocidad es casi cero
+      if (this.vel.mag() < 0.3) {
+        const jitter = p5.Vector.random2D().mult(0.6);
+        this.applyForce(jitter);
+      }
+    }
+  }
+  applyWaterDrag() {
+    const speed = this.vel.mag();
+    const mag = this.dragK * speed * speed;
+    const drag = this.vel.copy().mult(-1).setMag(mag);
+    this.applyForce(drag);
+  }
+  update() {
+    this.vel.add(this.acc);
+    this.vel.limit(this.maxSpeed);
+    this.pos.add(this.vel);
+    this.acc.mult(0);
+  }
+  show() {
+    push();
+    translate(this.pos.x, this.pos.y);
+    const ang = this.vel.heading();
+    rotate(ang);
+    noStroke();
+    // sombra
+    fill(0, 70);
+    ellipse(2, 2, 14, 6);
+    // casco
+    fill(this.hull);
+    beginShape();
+    vertex(10, 0);
+    vertex(-8, -4);
+    vertex(-10, 0);
+    vertex(-8, 4);
+    endShape(CLOSE);
+    // vela mínima (detalle)
+    fill(255, 255, 255, 160);
+    triangle(-2, -1, -6, -1, -6, -10);
+    pop();
+  }
+  run() {
+    this.update();
+    this.show();
+  }
+}
+```
+
+# 7 captura 
+
+<img width="949" height="472" alt="image" src="https://github.com/user-attachments/assets/ee9f7934-820b-4798-84e1-08bf192e7658" />
