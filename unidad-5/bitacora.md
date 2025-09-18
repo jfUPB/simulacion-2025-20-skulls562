@@ -1354,3 +1354,26 @@ class Boat {
 # 7 captura 
 
 <img width="949" height="472" alt="image" src="https://github.com/user-attachments/assets/ee9f7934-820b-4798-84e1-08bf192e7658" />
+
+
+
+## calificacion de rubrica 
+
+1) Investigación y Experimentación — 5.0
+	•	Relacioné claramente heightmap → gradiente → flujo → fuerzas (drag/atractor) → comportamiento de olas/barcos.
+	•	Experimentos comparativos (F/A ON–OFF, nivel del mar, tasa de emisión) con notas de FPS y efecto visual.
+	•	Justifiqué decisiones de memoria: lifespan + borrado backward + cap global + cupo por emisor.
+
+2) Intención y Diseño — 5.0
+	•	Concepto consistente (Archipiélago de Corrientes) y bocetos/diagrama que guían la implementación.
+	•	Cada rasgo visible (verde por altura, costa, estelas, campo del atractor) responde a decisiones de diseño explícitas y se ve en la obra.
+
+3) Aplicación Técnica — 5.0
+	•	Herencia/polimorfismo observables: Particle → WaveCrest/WaveFoam; Boat, Emitter, flujo modular.
+	•	Gestión de memoria correcta y estable; gradientes en malla evitan cómputo redundante; cap global mantiene el frame rate.
+
+4) Calidad de la Obra Final — 5.0
+	•	Sistema estable en uso normal, con feedback claro y transiciones suaves.
+	•	Amplia variedad coherente (islas, río, olas, estelas, barcos) alineada con el concepto.
+
+Nota final propuesta: 5.0
