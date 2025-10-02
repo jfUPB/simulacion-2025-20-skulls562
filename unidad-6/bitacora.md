@@ -753,3 +753,13 @@ function drawHUD(bBass, bMid, bHigh, level){
   text(l1, 10, 20); text(l2, 10, 38); text(l3, 10, 56); text(l4, 10, 74);
 }
 ```
+
+# Calificacion rubrica 
+
+
+Investigación y Experimentación — 5.0 • Conecté portada→flow/steering y FFT (bajos/medios/agudos)→S/A/C; probé Flow vs Flock variando cellSize, maxSpeed/maxForce, perception, bassQ, rate.
+Intención y Diseño — 5.0 • Concepto coherente con Infinite Azure; portada define paleta/bordes; el teclado como “bajo” guía gestos visuales musicales.
+Aplicación Técnica — 5.0 • FlowField y Boids sólidos; macros (shockwave, ribbons) en buffer; audio-reactivo con FFT+PeakDetect, band-pass, FX, rate/loop; sin APIs privadas.
+Calidad de la Obra Final — 5.0 • Estable y responsivo; visuales densos pero legibles; entrega completa (código, link, capturas).
+
+Nota final propuesta: 5.0
