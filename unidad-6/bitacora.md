@@ -116,7 +116,7 @@ Efecto observado: aparecen remolinos y rutas cerradas; los agentes forman bandas
 <img width="900" height="567" alt="image" src="https://github.com/user-attachments/assets/d202214f-4176-4bd8-adf9-c0f81175c704" />
 
 
-aqui esta el ejemplo de lo que se buscaba 
+Codgo modficado
 
 
 ```js
@@ -127,4 +127,44 @@ let v = createVector(dy, -dx).normalize();
 this.field[this.index(x, y)] = v;
 
 ```
+
+# Acividad 4
+
+- Reglas
+
+Separación: quiero evitar hacinamiento.
+Cómo la calculo: miro vecinos muy cercanos; por cada uno sumo un vector desde el vecino hacia mí, normalizado e inverso a la distancia; promedio y lo convierto en steer (limito a maxforce).
+
+Alineación: quiero moverme con la dirección promedio de mis vecinos.
+Cómo la calculo: promedio sus velocidades; ese promedio lo llevo a maxspeed y hago desired - vel, limitando por maxforce.
+
+Cohesión: quiero ir hacia el centro de masa del grupo.
+Cómo la calculo: promedio sus posiciones; apunto del centro hacia mí con un seek (mismo patrón: desired - vel, limitado).
+
+
+-Parámetros clave
+
+
+Percepción: perceptionRadius (quién es vecino).
+
+Pesos: cuánto pesa cada regla al combinarlas (ej. wSep, wAli, wCoh).
+
+Límites dinámicos: maxspeed, maxforce.
+
+
+-Modificación que hice
+
+
+Cohesión = 0 (pongo wCoh = 0): el enjambre pierde tendencia a agruparse; veo bandas sueltas y dispersión, sobre todo si aumento wSep.
+
+Percepción muy grande (ej. 120 px): los boids se alinean globalmente y tienden a formar grandes cardúmenes con menos detalle local.
+
+
+<img width="894" height="554" alt="image" src="https://github.com/user-attachments/assets/8565297f-c186-4e3e-9b1a-fd19d39861fa" />
+
+
+```js
+W.coh = 0.0; // apago cohesión para observar dispersión
+```
+
 
