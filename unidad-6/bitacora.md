@@ -73,4 +73,58 @@ En resumen: steering es el marco de control que hace posible Boids y la animaci�
 
 
 
+# Actividad 3
+
+-Estructura del campo
+
+Uso una cuadrícula con celdas de tamaño cellSize; guardo los vectores en un array 1D field[x + y*cols].
+
+Cada celda almacena un p5.Vector unitario (dirección del flujo).
+
+Genero el ángulo por noise (Perlin) y lo convierto con p5.Vector.fromAngle.
+
+
+-Cómo sigo el campo (follow + steering)
+
+
+Mapeo mi posición a la celda: gx=floor(x/cellSize), gy=floor(y/cellSize).
+
+Tomo el vector de esa celda como deseado, lo pongo a maxspeed.
+
+Calculo steer = desired - vel, lo limito a maxforce y lo aplico como aceleración.
+
+
+-Parámetros clave
+
+
+Resolución: cellSize.
+
+Dinámica: maxspeed, maxforce.
+
+Ruido: noiseScale (detalle) y noiseZInc (animación).
+
+
+-Modificación que hice
+
+
+Reemplacé Perlin por curl noise (vector tangente a las isolíneas del ruido).
+
+Efecto observado: aparecen remolinos y rutas cerradas; los agentes forman bandas curvas más ricas. Con maxforce bajo, las curvas son suaves; con maxforce alto, reaccionan más brusco.
+
+
+
+<img width="900" height="567" alt="image" src="https://github.com/user-attachments/assets/d202214f-4176-4bd8-adf9-c0f81175c704" />
+
+
+aqui esta el ejemplo de lo que se buscaba 
+
+
+```js
+
+const dx = noise(xoff + eps, yoff, z) - noise(xoff - eps, yoff, z);
+const dy = noise(xoff, yoff + eps, z) - noise(xoff, yoff - eps, z);
+let v = createVector(dy, -dx).normalize();
+this.field[this.index(x, y)] = v;
+
+```
 
