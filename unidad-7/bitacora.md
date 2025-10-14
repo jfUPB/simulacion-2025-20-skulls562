@@ -19,3 +19,18 @@ Qué hace: creo un mundo con gravedad, un suelo estático y paredes laterales. G
 
 
 <img width="859" height="576" alt="image" src="https://github.com/user-attachments/assets/6f72e069-fc33-4cd5-9562-0a558f2c9e6e" />
+
+
+Link: https://editor.p5js.org/skulls562/sketches/ZjGJIXx8s
+
+
+
+Me pasó que al principio el mouse no arrastraba nada; la razón era que estaba usando Mouse.create(window) en vez de Mouse.create(canvas.elt). Cambié eso y añadí mouse.pixelRatio = pixelDensity() y quedó preciso. Otra cosa: algunos cuerpos se “iban” por los bordes porque sólo tenía un suelo; resolví metiendo dos paredes estáticas afuera del canvas. Probé a escalar el canvas con CSS y la interacción se descalibraba; lo corregí dejando el canvas al tamaño real en createCanvas() y sin transformarlo por CSS. Finalmente, si Engine.update() no corría con un dt estable, la simulación se veía “tartamuda”; fijé 1000/60 y se estabilizó.
+
+
+
+
+## Actividad 3
+
+
+https://editor.p5js.org/skulls562/full/W9ZD8VoTG
